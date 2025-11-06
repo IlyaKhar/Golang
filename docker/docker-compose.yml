@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: day2-app
+    environment:
+      - PORT=8080
+      - JWT_SECRET=${JWT_SECRET:-super-secret}
+      - JWT_ISSUER=day2
+      - JWT_AUDIENCE=day2-clients
+      # Для SQLite можно сохранять БД на том:
+      - SQLITE_DSN=file:/data/app.db?cache=shared&mode=rwc
+    volumes:
+      - app_data:/data   # если SQLite (менять путь в коде)
+    ports:
+      - "8080:8080"   # API и /metrics
+      - "6060:6060"   # pprof
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/metrics >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+volumes:
+  app_data:
