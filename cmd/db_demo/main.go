@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/pprof"
 	"time"
 
 	"day2/auth"
+	"day2/config"
 	"day2/db"
 	"day2/internal/structure/domain"
 	transporthttp "day2/internal/transport/http"
@@ -69,8 +71,14 @@ func (s *memUserService) DeleteUser(rctx context.Context, id int) error {
 }
 
 func main() {
+	// Config
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal("config:", err)
+	}
+
 	// 1) SQLite + миграции (SQL-файлы в коде)
-	sqlDB, err := sql.Open("sqlite", "file:./app.db?cache=shared&mode=rwc")
+	sqlDB, err := sql.Open("sqlite", cfg.SQLiteDSN)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,10 +94,10 @@ func main() {
 
 	// 3) JWT manager
 	mgr := auth.NewManager(auth.Config{
-		Secret:    []byte("super-secret"), // вынеси в ENV
+		Secret:    []byte(cfg.JWTSecret),
 		AccessTTL: 15 * time.Minute,
-		Issuer:    "day2",
-		Audience:  "day2-clients",
+		Issuer:    cfg.JWTIssuer,
+		Audience:  cfg.JWTAudience,
 	})
 
 	// 4) Router
@@ -97,7 +105,7 @@ func main() {
 	transporthttp.RegisterRoutes(mux, userHandlers, mgr)
 
 	// 5) Logging + Recover middleware (zap)
-	logg, err := logging.NewZap("dev")
+	logg, err := logging.NewZap(cfg.LogLevel)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,7 +114,7 @@ func main() {
 
 	mux.Handle("/metrics", monitoring.MetricsHandler())
 
-	// pprof на :6060 (в отдельной горутине)
+	// pprof на cfg.PprofPort (в отдельной горутине)
 	go func() {
 		m := http.NewServeMux()
 		m.HandleFunc("/debug/pprof/", pprof.Index)
@@ -115,15 +123,17 @@ func main() {
 		m.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		m.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-		log.Println("pprof on :6060")
-		if err := http.ListenAndServe(":6060", m); err != nil {
+		log.Printf("pprof on :%d\n", cfg.PprofPort)
+		if err := http.ListenAndServe(
+			":"+func(p int) string { return fmt.Sprintf("%d", p) }(cfg.PprofPort), m,
+		); err != nil {
 			log.Println("pprof server:", err)
 		}
 	}()
 
 	// 6) HTTP server
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + func(p int) string { return fmt.Sprintf("%d", p) }(cfg.Port),
 		Handler: handler,
 	}
 	log.Fatal(srv.ListenAndServe())

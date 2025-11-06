@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package day2.grpc;
+
+// Важно: go_package указывает модуль и конечный пакет для сгенерированного кода
+option go_package = "day2/grpc/gen;gen";
+
+message User {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  int32 age = 4;
+}
+
+message GetUserRequest { int32 id = 1; }
+message GetUserResponse { User user = 1; }
+
+message CreateUserRequest { User user = 1; }
+message CreateUserResponse { User user = 1; }
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+}
+
+
