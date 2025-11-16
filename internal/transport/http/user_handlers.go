@@ -3,7 +3,7 @@ package transporthttp
 import (
     "encoding/json"
     "context"
-    "net/http"
+	"net/http"
     "strconv"
     "strings"
 
@@ -20,7 +20,7 @@ type UserService interface {
 }
 
 type UserHandlers struct { svc UserService }
-
+  
 func NewUserHandlers(s UserService) *UserHandlers { return &UserHandlers{svc: s} }
 
 type LoginRequest struct {
@@ -28,7 +28,7 @@ type LoginRequest struct {
     Password string `json:"password"`
 }
 type LoginResponse struct { AccessToken string `json:"access_token"` }
-
+  
 func (h *UserHandlers) Login(w http.ResponseWriter, r *http.Request, jwtMgr *auth.Manager) {
     if r.Method != http.MethodPost {
         http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -37,12 +37,12 @@ func (h *UserHandlers) Login(w http.ResponseWriter, r *http.Request, jwtMgr *aut
     var in LoginRequest
     if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
         http.Error(w, "bad request", http.StatusBadRequest)
-        return
-    }
+		return
+	}
     if in.Email == "" || in.Password == "" {
         http.Error(w, "invalid credentials", http.StatusUnauthorized)
-        return
-    }
+		return
+	}
     // роль по умолчанию user (для админ‑ручек можешь временно поменять на "admin")
     token, err := jwtMgr.GenerateAccessToken(1, in.Email, "user")
     if err != nil { http.Error(w, "cannot issue token", http.StatusInternalServerError); return }
@@ -54,11 +54,11 @@ func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
     var u domain.User
     if err := json.NewDecoder(r.Body).Decode(&u); err != nil { http.Error(w, err.Error(), http.StatusBadRequest); return }
     if err := h.svc.CreateUser(r.Context(), &u); err != nil {
-        switch err {
-        case domain.ErrInvalidInput:
-            http.Error(w, err.Error(), http.StatusBadRequest)
-        case domain.ErrEmailExists:
-            http.Error(w, err.Error(), http.StatusConflict)
+	switch err {
+	case domain.ErrInvalidInput:
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case domain.ErrEmailExists:
+		http.Error(w, err.Error(), http.StatusConflict)
         default:
             http.Error(w, err.Error(), http.StatusInternalServerError)
         }
@@ -93,13 +93,13 @@ func (h *UserHandlers) UpdateUser(w http.ResponseWriter, r *http.Request) {
         switch err {
         case domain.ErrInvalidInput:
             http.Error(w, err.Error(), http.StatusBadRequest)
-        case domain.ErrUserNotFound:
-            http.Error(w, err.Error(), http.StatusNotFound)
+	case domain.ErrUserNotFound:
+		http.Error(w, err.Error(), http.StatusNotFound)
         case domain.ErrEmailExists:
             http.Error(w, err.Error(), http.StatusConflict)
-        default:
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-        }
+	default:
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
         return
     }
     w.Header().Set("Content-Type", "application/json")
@@ -121,8 +121,8 @@ func (h *UserHandlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandlers) ListUsers(w http.ResponseWriter, r *http.Request) {
     users, err := h.svc.ListUsers(r.Context(), 50, 0)
     if err != nil { http.Error(w, err.Error(), http.StatusInternalServerError); return }
-    w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
     _ = json.NewEncoder(w).Encode(users)
-}
+  }
 
 

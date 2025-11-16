@@ -1,0 +1,26 @@
+# ТЕОРИЯ: render.yaml - конфигурация для автоматического деплоя на Render
+# - Render читает этот файл и автоматически настраивает сервис
+# - Можно настроить переменные окружения, команды сборки и запуска
+
+services:
+  - type: web
+    name: golang-app
+    env: go
+    # ТЕОРИЯ: Команда сборки
+    # - Собираем бинарник в файл server
+    buildCommand: go build -o server ./deploy
+    # ТЕОРИЯ: Команда запуска
+    # - Запускаем скомпилированный бинарник
+    startCommand: ./server
+    # ТЕОРИЯ: Переменные окружения
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: ENVIRONMENT
+        value: production
+      # ТЕОРИЯ: Можно использовать секреты из Render Dashboard
+      # - key: DATABASE_URL
+      #   sync: false  # не синхронизировать, использовать из Dashboard
+      # - key: JWT_SECRET
+      #   generateValue: true  # Render сгенерирует случайное значение
+

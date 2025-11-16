@@ -1,0 +1,22 @@
+{
+  "name": "golang-app",
+  "description": "Go application for learning deployment",
+  "repository": "https://github.com/IlyaKhar/Golang",
+  "keywords": ["go", "golang", "api"],
+  "buildpacks": [
+    {
+      "url": "heroku/go"
+    }
+  ],
+  "env": {
+    "PORT": {
+      "description": "Port to run the server",
+      "value": "8080"
+    },
+    "ENVIRONMENT": {
+      "description": "Application environment",
+      "value": "production"
+    }
+  }
+}
+
